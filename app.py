@@ -211,7 +211,7 @@ if image_info_list:
     st.subheader("")
     for img, address, _, _, datetime_taken,nearest_town,Town in image_info_list:
         imageKey = imageKey+1
-        st.image(img, caption=f" {nearest_town}, {address}, {datetime_taken}", use_column_width=True)
+        st.image(img, caption=f" {nearest_town}, {address}, {datetime_taken}", use_column_width='always')
         
 
         visaOpenAI = st.button("Chat OpenAI Info", key=imageKey*2222)
