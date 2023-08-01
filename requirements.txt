@@ -1,0 +1,10 @@
+beautifulsoup4==4.12.2
+folium==0.14.0
+geopy==2.3.0
+openai==0.27.4
+pandas==1.4.2
+Pillow==10.0.0
+requests==2.27.1
+reverse_geocoder==1.5.1
+streamlit==1.22.0
+streamlit_folium==0.13.0
