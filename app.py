@@ -111,7 +111,7 @@ geolocator = Nominatim(user_agent="image-locator")
 
 # Streamlit app header
 st.title("iPhone Image Locator App")
-st.info("Upload photos from you iPhone and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI")
+st.info("Upload iPhone photos from your Computer and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI")
 
 # Image upload
 uploaded_files = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
@@ -138,8 +138,6 @@ if uploaded_files:
         if exif_data is not None:
             for tag, value in exif_data.items():
                 if tag in ExifTags.TAGS and ExifTags.TAGS[tag] == "GPSInfo":
-                    #latitude  = value[2][0] + value[2][1] / 60 + value[2][2] / 3600
-                    #longitude = value[4][0] + value[4][1] / 60 + value[4][2] / 3600
 
                     latitude = float(value[2][0]) + float(value[2][1]) / 60 + float(value[2][2]) / 3600
                     longitude = float(value[4][0]) + float(value[4][1]) / 60 + float(value[4][2]) / 3600
@@ -173,15 +171,10 @@ if uploaded_files:
                         
                         df_searchLokalInfo_Zwischen['Town'] = searchLokalInfo_name
                         
-                        
-
 
 
                     # Append image info to the list
                     image_info_list.append((img, address, latitude, longitude, datetime_taken,nearest_town, Town))
-
-
-
 
                     break  # Stop processing once GPSInfo is found
 
