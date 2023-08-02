@@ -205,37 +205,6 @@ if image_info_list:
     for img, address, _, _, datetime_taken,nearest_town,Town in image_info_list:
         imageKey = imageKey+1
         st.image(img, caption=f" {nearest_town}, {address}, {datetime_taken}", use_column_width='always')
-        
-
-        visaOpenAI = st.button("Chat OpenAI Info", key=imageKey*2222)
-        if visaOpenAI:
-
-            # User input
-            pre_Input = "Please give me a summary of the demographical, historical, cultural, meteroligical, polticial and touristic information about this location and the closest town of following location, and if some famous people have lived here and there are some interesting tourist attractions: "
-            user_input = address
-
-            prompt_input = pre_Input + user_input
-
-            # Use ChatGPT to generate a response
-            if user_input:
-                try:
-                    response = openai.Completion.create(
-                        engine="text-davinci-002",  # Use GPT-3.5 engine
-                        prompt=prompt_input,
-                        max_tokens=800,  # Adjust the length of the response as needed
-                    )
-                    if response and "choices" in response and response["choices"]:
-                        bot_response = response["choices"][0]["text"]
-                        st.sidebar.write(bot_response)
-                    else:
-                        st.sidebar.write("Bot: I'm sorry, I couldn't generate a response at the moment.")
-                except Exception as e:
-                    st.sidebar.write("Bot: An error occurred while processing your request.")
-                    st.sidebar.write("Error Message:", str(e))
-
-
-
-
 
 
         visaWiki = st.button("Wikipedia Info", key=imageKey*1000)
@@ -275,6 +244,37 @@ if image_info_list:
 
 
             st.sidebar.divider()
+
+            visaOpenAI = st.button("Chat OpenAI Info", key=imageKey * 2222)
+            if visaOpenAI:
+
+                # User input
+                pre_Input = "Please give me a summary of the demographical, historical, cultural, meteroligical, polticial and touristic information about this location and the closest town of following location, and if some famous people have lived here and there are some interesting tourist attractions: "
+                user_input = address
+
+                prompt_input = pre_Input + user_input
+
+                # Use ChatGPT to generate a response
+                if user_input:
+                    try:
+                        response = openai.Completion.create(
+                            engine="text-davinci-002",  # Use GPT-3.5 engine
+                            prompt=prompt_input,
+                            max_tokens=800,  # Adjust the length of the response as needed
+                        )
+                        if response and "choices" in response and response["choices"]:
+                            bot_response = response["choices"][0]["text"]
+                            st.sidebar.write(bot_response)
+                        else:
+                            st.sidebar.write("Bot: I'm sorry, I couldn't generate a response at the moment.")
+                    except Exception as e:
+                        st.sidebar.write("Bot: An error occurred while processing your request.")
+                        st.sidebar.write("Error Message:", str(e))
+
+
+            st.sidebar.divider()
+
+
 
             selectedLocation = st.sidebar.selectbox("Choose other nearby location",locationInfoList)
             #selectedLocationButton = st.sidebar.checkbox("Change location")
