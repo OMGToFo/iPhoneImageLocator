@@ -186,8 +186,11 @@ if uploaded_files:
 
 
 openai.api_key = st.text_input("Enter your OpenAI Key to fetch location info from OpenAI", value="")
-# Google Maps API key (replace with your own key)
+
+# Google Maps API key
 #api_key = ""
+import os
+api_key = os.getenv('api_key')
 
 Sortierung = False
 
