@@ -22,7 +22,10 @@ import openai
 #openai.api_key = ""  # Replace with your actual API key
 
 
-st.set_page_config(page_title="iPhone Image Locator", page_icon=None, layout="centered", initial_sidebar_state="expanded")
+
+
+
+st.set_page_config(page_title="Image Locator", page_icon=None, layout="centered", initial_sidebar_state="expanded")
 
 
 
@@ -111,10 +114,10 @@ geolocator = Nominatim(user_agent="image-locator")
 
 # Streamlit app header
 st.title("iPhone Image Locator App")
-st.info("Upload iPhone photos from your Computer and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI")
+st.info("Upload iPhone photos from your Computer and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI. If you upload several photos, you can see the travel distances (walking, driving, biking) calculated by Google Maps")
 
 # Image upload
-uploaded_files = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload image(s)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
 # List to store image info (filename, latitude, longitude, datetime)
 image_info_list = []
@@ -182,10 +185,18 @@ if uploaded_files:
         os.remove(tmp_filename)
 
 
-openai.api_key = st.text_input("Enter your OpenAI Key to get location info from OpenAI", value="")
+openai.api_key = st.text_input("Enter your OpenAI Key to fetch location info from OpenAI", value="")
+# Google Maps API key (replace with your own key)
+api_key = "AIzaSyDrxPuhRPNObb7BiT6CoEvEunw3Vo3g5-I"
+
+Sortierung = False
 
 # Sort the image_info_list based on the datetime_taken value
-image_info_list = sorted(image_info_list, key=lambda x: x[4])
+anzeigenSortierung = st.checkbox("Show newest Photos first")
+if anzeigenSortierung == True:
+    Sortierung = True
+
+image_info_list = sorted(image_info_list, key=lambda x: x[4],reverse=Sortierung)
 image_info_list_df = pd.DataFrame(image_info_list)
 
 show_image_info_list = st.checkbox("Show image_info_list")
@@ -199,15 +210,22 @@ imageKey = 0
 
 if image_info_list:
 
+
+
+
     # Display the images -  en efter en
     st.header("Images and Locations")
     st.subheader("")
+
     for img, address, _, _, datetime_taken,nearest_town,Town in image_info_list:
         imageKey = imageKey+1
-        st.image(img, caption=f" {nearest_town}, {address}, {datetime_taken}", use_column_width='always')
+        st.write("")
+        st.caption(datetime_taken)
+        st.image(img, caption=f" {nearest_town}, {address}", use_column_width='always')
 
+        col1, col2, col3 = st.columns([1, 1,2])
 
-        visaWiki = st.button("Wikipedia Info", key=imageKey*1000)
+        visaWiki = col1.button("Wikipedia Info", key=imageKey*1000)
         if visaWiki:
 
             wiki_info1 = scrape_wikipedia(Town)
@@ -245,7 +263,7 @@ if image_info_list:
 
         st.sidebar.divider()
 
-        visaOpenAI = st.button("Chat OpenAI Info", key=imageKey * 2222)
+        visaOpenAI = col3.button("Chat OpenAI Info", key=imageKey * 2222)
         if visaOpenAI:
 
             # User input
@@ -275,7 +293,7 @@ if image_info_list:
             st.sidebar.divider()
 
 
-
+            _="""
             selectedLocation = st.sidebar.selectbox("Choose other nearby location",locationInfoList)
             #selectedLocationButton = st.sidebar.checkbox("Change location")
             #if selectedLocationButton:
@@ -284,7 +302,7 @@ if image_info_list:
                 wiki_infoSelected = scrape_wikipedia(selectedLocation)
                 #st.checkbox("Check location")
                 st.sidebar.write(wiki_infoSelected)
-
+            """
 
 
             st.sidebar.divider()
@@ -297,7 +315,7 @@ if image_info_list:
             #st.sidebar.write("location.raw address:",nearest_town)
             
 
-        visaExif = st.button("exif", key=imageKey)
+        visaExif = col2.button("exif", key=imageKey)
         if visaExif:
             st.sidebar.write(exif_data)
 
@@ -305,18 +323,24 @@ if image_info_list:
         st.divider()
         
     # Create a map centered around the locations
-    map = folium.Map(location=[image_info_list[0][2], image_info_list[0][3]], zoom_start=5)
+    map = folium.Map(location=[image_info_list[0][2], image_info_list[0][3]], zoom_start=10)
 
     # Draw a line connecting the locations and add distance and travel time information as popups
     #line_coordinates = [(latitude, longitude) for _, _, latitude, longitude, _ in image_info_list] #funkar, men försöker smuggla med orter..
-    line_coordinates = [(latitude, longitude) for img, address, latitude, longitude, datetime_taken,nearest_town,Town in image_info_list] 
+    line_coordinates = [(latitude, longitude) for img, address, latitude, longitude, datetime_taken,nearest_town,Town in image_info_list]
 
     total_distance = 0.0
     for i in range(len(line_coordinates) - 1):
         coord1 = line_coordinates[i]
         coord2 = line_coordinates[i + 1]
+        #st.write("coord1:",coord1)
+        #st.write("coord2:", coord2)
+        #st.write("nearest_town:",nearest_town)
+
+
         distance = calculate_distance(coord1, coord2)
         total_distance += distance
+
 
         #walking_time = calculate_travel_time(distance, mode="walking")
         #biking_time = calculate_travel_time(distance, mode="biking")
@@ -328,44 +352,111 @@ if image_info_list:
         #popup_text += f"Estimated Car Driving Time: {car_time:.1f} hours"
 
 
-
-
         folium.PolyLine(locations=[coord1, coord2], color='blue').add_to(map)
-        folium.Marker(coord1, popup=datetime_taken).add_to(map)
+        #folium.Marker(coord1, popup=datetime_taken).add_to(map)
 
     # Add markers for each location
-    for _, _, latitude, longitude, _ , _ , Town in image_info_list:
-        folium.Marker([latitude, longitude]).add_to(map)
+    for _, _, latitude, longitude, datetime_taken, _ , Town in image_info_list:
+        folium.Marker([latitude, longitude], tooltip=datetime_taken + " in " + Town).add_to(map)
 
-    # Display the total straight line distance
-    st.subheader("Total Straightline Distance")
-    st.write(f"{total_distance:.2f} km")
     
 
     # Display the map
     st_data = st_folium(map, width=725)
 
-    #visa time estimates
+    if len(image_info_list_df)>1:
 
-    zeitSchäetzungExpander = st.expander("Show very approx travel times")
-    with zeitSchäetzungExpander:
+        # Display the total straight line distance
 
-        total_distance = 0.0
-        Route = 0
-        for i in range(len(line_coordinates) - 1):
-            coord1 = line_coordinates[i]
-            coord2 = line_coordinates[i + 1]
-            distance = calculate_distance(coord1, coord2)
-            total_distance += distance    
-            walking_time = calculate_travel_time(distance, mode="walking")
-            biking_time = calculate_travel_time(distance, mode="biking")
-            car_time = calculate_travel_time(distance, mode="car")
 
-            Route = Route + 1
-            st.write("")
-            st.write("Segment " +str(Route))
-            st.write(f"Distance: {distance:.2f} km\n")
-            st.write(f"Estimated Walking Time: {walking_time:.1f} hours\n")
-            st.write(f"Estimated Biking Time: {biking_time:.1f} hours\n")
-            st.write(f"Estimated Car Driving Time: {car_time:.1f} hours")
-            st.write("")
+
+        #visa time estimates
+
+        zeitSchäetzungExpander = st.expander("Show distances and travel times")
+        with zeitSchäetzungExpander:
+
+            st.write("Total Straightline Distance:")
+            st.write(f"{total_distance:.2f} km")
+
+
+            total_distance = 0.0
+            Route = 0
+            for i in range(len(line_coordinates) - 1): #funkar
+            #for _, _, latitude, longitude, datetime_taken, _, Town in image_info_list: #funkar inte
+
+                coord1 = line_coordinates[i]
+                coord2 = line_coordinates[i + 1]
+                town1 = image_info_list_df._get_value(i, 6)
+                town2 = image_info_list_df._get_value(i+1, 6)
+
+                distance = calculate_distance(coord1, coord2)
+                total_distance += distance
+                walking_time = calculate_travel_time(distance, mode="walking")
+                biking_time = calculate_travel_time(distance, mode="biking")
+                car_time = calculate_travel_time(distance, mode="car")
+                #st.write("coord1: ",coord1)
+                #st.write("coord2: ", coord2)
+
+
+                Route = Route + 1
+                st.write("")
+                st.subheader("Segment " +str(Route)+": " + "From " + town1 + " to " +town2)
+                #st.write("From " + town1 + " to " +town2)
+
+                # Transportation mode dropdown
+                transport_mode = st.selectbox("Select Google Maps Transportation Mode:",
+                                              ["driving", "walking", "bicycling"], key="transportmodecheck" + str(i))
+                # Define the API endpoint
+                base_url = "https://maps.googleapis.com/maps/api/directions/json?"
+                lat1, lon1 = coord1
+                lat2, lon2 = coord2
+
+                # Create the origin and destination strings
+                origin = f"{lat1},{lon1}"
+                destination = f"{lat2},{lon2}"
+
+                # st.write("origin: ", origin)
+
+                # st.write("destination: ", destination)
+
+                # Define the parameters for the API request, including transportation mode
+                params = {
+                    "origin": origin,
+                    "destination": destination,
+                    "mode": transport_mode,
+                    "key": api_key,
+                }
+
+                # Make the API request
+                response = requests.get(base_url, params=params)
+
+                if response.status_code == 200:
+                    data = response.json()
+
+                    # Extract the driving distance in kilometers and duration in minutes from the API response
+                    if data["status"] == "OK":
+                        distance_meters = data["routes"][0]["legs"][0]["distance"]["value"]
+                        distance_km = distance_meters / 1000  # Convert meters to kilometers
+                        duration_seconds = data["routes"][0]["legs"][0]["duration"]["value"]
+                        duration_minutes = duration_seconds / 60  # Convert seconds to minutes
+
+                        st.write(f"Google Maps Distance: {distance_km:.2f} km")
+                        st.write(f"Google Maps Duration (min): {duration_minutes:.2f} minutes " + transport_mode)
+                        if duration_minutes > 60:
+                            st.write(f"Google Maps Duration (hours): {duration_minutes / 60:.1f} hours " + transport_mode)
+
+                    else:
+                        st.error("Error: Unable to calculate distance and duration.")
+                else:
+                    st.error(
+                        "Error: Unable to connect to the Google Maps API. Please check your API key and try again.")
+
+                st.write("")
+                st.write(f"Straightline - Distance: {distance:.2f} km\n")
+                st.write(f"Straightline - Estimated Walking Time: {walking_time:.1f} hours\n")
+                st.write(f"Straightline - Estimated Biking Time: {biking_time:.1f} hours\n")
+                st.write(f"Straightline - Estimated Car Driving Time: {car_time:.1f} hours")
+                st.write("")
+
+
+                st.divider()
