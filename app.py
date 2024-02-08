@@ -25,7 +25,7 @@ import openai
 
 
 
-st.set_page_config(page_title="Image Locator", page_icon=None, layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Image Locator", page_icon=None, layout="centered")#, initial_sidebar_state="expanded")
 
 
 
@@ -113,8 +113,8 @@ geolocator = Nominatim(user_agent="image-locator")
 
 
 # Streamlit app header
-st.title("iPhone Image Locator App")
-st.info("Upload iPhone photos from your Computer and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI. If you upload several photos, you can see the travel distances (walking, driving, biking) calculated by Google Maps")
+st.title("Simple Image Locator App")
+st.info("Upload  photos and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI. If you upload several photos, you can see the travel distances (walking, driving, biking) calculated by Google Maps")
 
 # Image upload
 uploaded_files = st.file_uploader("Upload image(s)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
@@ -138,6 +138,10 @@ if uploaded_files:
         # Extract GPS coordinates from the image (if available)
         exif_data = img._getexif()
         datetime_taken = extract_datetime(exif_data)
+
+        if exif_data is None:
+            st.warning("No exif-data found for this image")
+
         if exif_data is not None:
             for tag, value in exif_data.items():
                 if tag in ExifTags.TAGS and ExifTags.TAGS[tag] == "GPSInfo":
@@ -199,12 +203,31 @@ anzeigenSortierung = st.checkbox("Show newest Photos first")
 if anzeigenSortierung == True:
     Sortierung = True
 
+
+
+
 image_info_list = sorted(image_info_list, key=lambda x: x[4],reverse=Sortierung)
 image_info_list_df = pd.DataFrame(image_info_list)
 
-show_image_info_list = st.checkbox("Show image_info_list")
-if show_image_info_list:  
-    st.dataframe(image_info_list_df)
+if len(image_info_list) >0:
+    show_image_info_list = st.checkbox("Show table with image infos")
+    if show_image_info_list:
+
+        # Rename the columns
+        image_info_list_df_formatted = image_info_list_df.rename(columns={1: 'Address', 2: 'Latitude', 3: 'Longitude', 4: 'Date', 5: 'Location1', 6: 'Location2'})
+
+        # Drop the column named 0
+        image_info_list_df_formatted = image_info_list_df_formatted.drop(columns=[0])
+
+        # Reorder the columns
+        new_order = ['Date'] + [col for col in image_info_list_df_formatted.columns if col != 'Date']
+        image_info_list_df_formatted = image_info_list_df_formatted[new_order]
+
+        st.write("List of Images with with exif data:")
+        st.dataframe(image_info_list_df_formatted)
+
+        # Display the DataFrame with the updated column names
+        #st.write(image_info_list_df_formatiert)
 
 
 
@@ -326,11 +349,20 @@ if image_info_list:
         st.divider()
         
     # Create a map centered around the locations
-    map = folium.Map(location=[image_info_list[0][2], image_info_list[0][3]], zoom_start=10)
+    #map = folium.Map(location=[image_info_list[0][2], image_info_list[0][3]], zoom_start=10)
+    #st.write("image_info_list[0][2]: ",image_info_list[0][2])
+    #st.write("image_info_list[0][3]: ", image_info_list[0][3])
+
+    # Create a folium map
+    map = folium.Map()
+
 
     # Draw a line connecting the locations and add distance and travel time information as popups
     #line_coordinates = [(latitude, longitude) for _, _, latitude, longitude, _ in image_info_list] #funkar, men försöker smuggla med orter..
     line_coordinates = [(latitude, longitude) for img, address, latitude, longitude, datetime_taken,nearest_town,Town in image_info_list]
+
+    #st.write("line_coordinates:",line_coordinates)
+
 
     total_distance = 0.0
     for i in range(len(line_coordinates) - 1):
@@ -362,7 +394,12 @@ if image_info_list:
     for _, _, latitude, longitude, datetime_taken, _ , Town in image_info_list:
         folium.Marker([latitude, longitude], tooltip=datetime_taken + " in " + Town).add_to(map)
 
-    
+    # Calculate the bounds of the data
+    sw = image_info_list_df[[2, 3]].min().values.tolist()
+    ne = image_info_list_df[[2, 3]].max().values.tolist()
+
+    # Fit the map to the bounds
+    map.fit_bounds([sw, ne])
 
     # Display the map
     st_data = st_folium(map, width=725)
@@ -449,7 +486,7 @@ if image_info_list:
                             st.write(f"Google Maps Duration (hours): {duration_minutes / 60:.1f} hours " + transport_mode)
 
                     else:
-                        st.error("Error: Unable to calculate distance and duration.")
+                        st.error("Error: Unable to calculate Google Maps distance and duration.")
                 else:
                     st.error(
                         "Error: Unable to connect to the Google Maps API. Please check your API key and try again.")
