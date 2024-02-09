@@ -140,7 +140,7 @@ if uploaded_files:
         datetime_taken = extract_datetime(exif_data)
 
         if exif_data is None:
-            st.warning("No exif-data found for this image")
+            st.warning("No exif-data found for this image;" + uploaded_file.name)
 
         if exif_data is not None:
             for tag, value in exif_data.items():
