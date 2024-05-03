@@ -117,7 +117,7 @@ st.title("Simple Image Locator App")
 st.info("Upload  photos and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI. If you upload several photos, you can see the travel distances (walking, driving, biking) calculated by Google Maps")
 
 # Image upload
-uploaded_files = st.file_uploader("Upload image(s)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload image(s)", type=["jpg", "jpeg", "png","heic"], accept_multiple_files=True)
 
 # List to store image info (filename, latitude, longitude, datetime)
 image_info_list = []
