@@ -1,4 +1,4 @@
-# ImageLocator
+# Simple Image Locator
 https://simpleimagelocator.streamlit.app
 
 Overview
