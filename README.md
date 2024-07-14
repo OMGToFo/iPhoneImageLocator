@@ -1,5 +1,5 @@
-# iPhoneImageLocator
-https://iphoneimagelocator.streamlit.app
+# ImageLocator
+https://simpleimagelocator.streamlit.app
 
 Overview
 
@@ -8,10 +8,12 @@ This Streamlit app allows you to upload images and discover information about wh
 Features
 
 Image Upload: Easily upload images from your device.
-Location Details: Instantly view information about when and where the uploaded photos were taken.
-Route Visualization: See the route between multiple locations on a map.
-Distance Calculation: Get driving, biking, and walking distances between locations.
+Exif Data: See the exif data of the photos
+Location Details: View information about when and where the uploaded photos were taken.
 Wikipedia Integration: Access Wikipedia information about the locations to learn more.
+Route Visualization: See the route between multiple locations on a map.
+Distance Calculation: Get driving, biking, and walking distances between locations, by Google
+
 ChatOpenAI Integration (Optional): If you have a ChatOpenAI account, you can enable this feature to get even more insights about the locations.
 
 Optional ChatOpenAI Integration
