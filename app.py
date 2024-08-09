@@ -14,18 +14,37 @@ import pandas as pd
 
 import time
 
+import json
 
 import reverse_geocoder as rg
 
-import openai
+
+
+
+import openai #old code
+
+from openai import OpenAI
+
 # Set up OpenAI API
-#openai.api_key = ""  # Replace with your actual API key
+openai_api_key = ""  # Replace with your actual API key
+
+
+#password secrets handling
+import os
+from dotenv import load_dotenv
+load_dotenv(".env")
 
 
 
+rapidApiKey = os.getenv("rapidApiKey")
+yelp_api_key = os.getenv("yelp_api_key")
+ocm_api_key = os.getenv("ocm_api_key")
+api_key =  os.getenv("googleMaps_api_key")
+X_RapidAPI_Key = os.getenv("X-RapidAPI-Key")
 
 
-st.set_page_config(page_title="Image Locator", page_icon=None, layout="centered")#, initial_sidebar_state="expanded")
+
+st.set_page_config(page_title="Simple Image Locator", page_icon=None, layout="centered")#, initial_sidebar_state="expanded")
 
 
 
@@ -113,11 +132,11 @@ geolocator = Nominatim(user_agent="image-locator")
 
 
 # Streamlit app header
-st.title("Simple Image Locator App")
-st.info("Upload  photos and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI. If you upload several photos, you can see the travel distances (walking, driving, biking) calculated by Google Maps")
+st.title("Simple Image Locator")
+st.info("Upload  photos and see where and when they were taken and get some Info about the location from Wikipedia and OpenAI. If you upload several photos, you can see the travel distances (walking, driving, biking)")
 
 # Image upload
-uploaded_files = st.file_uploader("Upload image(s)", type=["jpg", "jpeg", "png","heic"], accept_multiple_files=True)
+uploaded_files = st.sidebar.file_uploader("Upload image(s)", type=["jpg", "jpeg", "png","heic"], accept_multiple_files=True)
 
 # List to store image info (filename, latitude, longitude, datetime)
 image_info_list = []
@@ -189,7 +208,7 @@ if uploaded_files:
         os.remove(tmp_filename)
 
 
-openai.api_key = st.text_input("Enter your OpenAI Key to fetch location info from OpenAI", value="")
+openai_api_key = st.text_input("Enter your OpenAI Key to fetch location info from OpenAI", value="")
 
 # Google Maps API key
 #api_key = ""
@@ -223,11 +242,23 @@ if len(image_info_list) >0:
         new_order = ['Date'] + [col for col in image_info_list_df_formatted.columns if col != 'Date']
         image_info_list_df_formatted = image_info_list_df_formatted[new_order]
 
-        st.write("List of Images with with exif data:")
+        st.write("List of Images with with date and location:")
         st.dataframe(image_info_list_df_formatted)
 
-        # Display the DataFrame with the updated column names
-        #st.write(image_info_list_df_formatiert)
+        # Create the dataframe
+        #image_info_list_df_formatted = pd.DataFrame(image_info_list_df_formatted)
+
+        # Convert the 'Date' column to datetime format with specific format
+        #image_info_list_df_formatted['Date'] = pd.to_datetime(image_info_list_df_formatted['Date'],format='%Y:%m:%d %H:%M:%S')
+
+
+        # Calculate the total time difference between the last and first rows
+        #total_time_difference = image_info_list_df_formatted['Date'].iloc[-1] - image_info_list_df_formatted['Date'].iloc[0]
+
+        #st.write(image_info_list_df_formatted)
+        #st.write("Total time difference:", total_time_difference)
+
+
 
 
 
@@ -289,11 +320,17 @@ if image_info_list:
 
         st.sidebar.divider()
 
+
+        #CHAT OPEN AI ###################################################
         visaOpenAI = col3.button("Chat OpenAI Info", key=imageKey * 2222)
         if visaOpenAI:
+            client = OpenAI(
+                # This is the default and can be omitted
+                api_key=openai_api_key,
+            )
 
             # User input
-            pre_Input = "Please give me a summary of the demographical, historical, cultural, meteroligical, polticial and touristic information about this location and the closest town of following location, and if some famous people have lived here and there are some interesting tourist attractions: "
+            pre_Input = "Please give me a summary of the demographical, historical, cultural, meteroligical, polticial and touristic information about this location and the closest town of following location, and if some famous people have lived here and there are some interesting tourist attractions, shopping, restaurants and bars: "
             user_input = address
 
             prompt_input = pre_Input + user_input
@@ -301,19 +338,26 @@ if image_info_list:
             # Use ChatGPT to generate a response
             if user_input:
                 try:
-                    response = openai.Completion.create(
-                        engine="text-davinci-002",  # Use GPT-3.5 engine
-                        prompt=prompt_input,
+                    response = client.chat.completions.create(
+                        model="gpt-4o",  # Use GPT-3.5 or GPT-4 (e.g., "gpt-4")
+                        messages=[
+                            {"role": "system", "content": "You are a helpful assistant."},
+                            {"role": "user", "content": prompt_input}
+                        ],
                         max_tokens=800,  # Adjust the length of the response as needed
                     )
-                    if response and "choices" in response and response["choices"]:
-                        bot_response = response["choices"][0]["text"]
+                    if response and response.choices:
+                        bot_response = response.choices[0].message.content
                         st.sidebar.write(bot_response)
                     else:
                         st.sidebar.write("Bot: I'm sorry, I couldn't generate a response at the moment.")
                 except Exception as e:
                     st.sidebar.write("Bot: An error occurred while processing your request.")
                     st.sidebar.write("Error Message:", str(e))
+
+            # END CHAT OPEN AI ###################################################
+
+
 
 
             st.sidebar.divider()
@@ -353,56 +397,166 @@ if image_info_list:
     #st.write("image_info_list[0][2]: ",image_info_list[0][2])
     #st.write("image_info_list[0][3]: ", image_info_list[0][3])
 
-    # Create a folium map
-    map = folium.Map()
+    if len(image_info_list) > 1:
+        st.subheader("Overview of locations")
+
+        routingAuswahlOverview = ['drive', 'truck', 'bicycle', 'walk']
+
+        routingModeSelectionOverview  = st.selectbox("Choose routing", routingAuswahlOverview , key="routingAuswahlOverview")
+
+        #Trying to create an overview map that shows the routing from point to point #####
+        point_coordinates = [(latitude, longitude) for img, address, latitude, longitude, datetime_taken, nearest_town, Town
+                            in image_info_list]
+
+        OverviewSumDistance = 0
+        OverviewSumTime = 0
+
+        # Initialize the map outside the loop
+        OverViewMap = folium.Map()
+        for p in range(len(point_coordinates) - 1):
+            lon1 = str(point_coordinates[p][1])
+            lat1 = str(point_coordinates[p][0])
+
+            lon2 = str(point_coordinates[p + 1][1])
+            lat2 = str(point_coordinates[p + 1][0])
+
+            #st.write("point p #######: ", p)
+            #st.write("lon1:", lon1)
+            #st.write("lat1:", lat1)
+            #st.write("lon2:", lon2)
+            #st.write("lat2:", lat2)
+
+            url = "https://route-and-directions.p.rapidapi.com/v1/routing"
+            querystring = {"waypoints": f"{lat1},{lon1}|{lat2},{lon2}", "mode": routingModeSelectionOverview}
+            headers = {
+                "X-RapidAPI-Key": X_RapidAPI_Key,
+                "X-RapidAPI-Host": "route-and-directions.p.rapidapi.com"
+            }
+
+            response = requests.get(url, headers=headers, params=querystring)
+
+            if response.status_code == 200:
+                try:
+                    response_data = response.json()
+                    if 'features' in response_data:
+                        mls = response_data['features'][0]['geometry']['coordinates']
+                        points = [(i[1], i[0]) for i in mls[0]]
+
+                        # Add markers for the start and ending points
+                        folium.Marker(points[0]).add_to(OverViewMap)
+                        folium.Marker(points[-1]).add_to(OverViewMap)
+
+                        # Add the line between points
+                        folium.PolyLine(points, weight=5, opacity=1).add_to(OverViewMap)
+
+                        # Add markers for each location
+                        for _, _, latitude, longitude, datetime_taken, _, Town in image_info_list:
+                            folium.Marker([latitude, longitude], tooltip=datetime_taken + " in " + Town).add_to(OverViewMap)
+
+                        # Calculate the bounds of the data
+                        sw = image_info_list_df[[2, 3]].min().values.tolist()
+                        ne = image_info_list_df[[2, 3]].max().values.tolist()
 
 
-    # Draw a line connecting the locations and add distance and travel time information as popups
-    #line_coordinates = [(latitude, longitude) for _, _, latitude, longitude, _ in image_info_list] #funkar, men försöker smuggla med orter..
-    line_coordinates = [(latitude, longitude) for img, address, latitude, longitude, datetime_taken,nearest_town,Town in image_info_list]
+                        # Adjust the map bounds to include the current route
+                        df = pd.DataFrame(mls[0]).rename(columns={0: 'Lon', 1: 'Lat'})[['Lat', 'Lon']]
+                        #sw = df[['Lat', 'Lon']].min().values.tolist()
+                        #ne = df[['Lat', 'Lon']].max().values.tolist()
+                        OverViewMap.fit_bounds([sw, ne])
 
-    #st.write("line_coordinates:",line_coordinates)
+                        mlsTabelle = response.json()['features'][0]['properties']['legs'][0]['steps']
+                        df_mlsTabelle = pd.json_normalize(
+                            mlsTabelle)  # .rename(columns={0: 'Lon', 1: 'Lat'})[['Lat', 'Lon']]
+
+                        #st.write(df_mlsTabelle)
+
+                        sumDistance = df_mlsTabelle['distance'].sum() / 1000
+                        sumTime = df_mlsTabelle['time'].sum() / 60
+
+                        OverviewSumDistance = OverviewSumDistance + sumDistance
+                        OverviewSumTime = OverviewSumTime + sumTime
+
+                    else:
+                        st.error(f"API response does not contain 'features' key for points {p} to {p + 1}.")
+                except Exception as e:
+                    st.error(f"An error occurred while processing the API response: {e}")
+            else:
+                st.error(f"API request failed with status code {response.status_code} for points {p} to {p + 1}.")
+
+            # Display the map
+        st_data = st_folium(OverViewMap, width=725, key="overview_map")
+
+        Overviewcol1, Overviewcol2 = st.columns(2)
+
+        Overviewcol1.metric(label="Distance (km)", value=OverviewSumDistance.round(0))
+
+        if sumTime < 180:
+            Overviewcol2.metric(label="Duration (min)", value=OverviewSumTime.round(0))
+        else:
+            OverviewSumTime = OverviewSumTime / 60
+            Overviewcol2.metric(label="Duration (hours)", value=OverviewSumTime.round(0))
 
 
-    total_distance = 0.0
-    for i in range(len(line_coordinates) - 1):
-        coord1 = line_coordinates[i]
-        coord2 = line_coordinates[i + 1]
-        #st.write("coord1:",coord1)
-        #st.write("coord2:", coord2)
-        #st.write("nearest_town:",nearest_town)
+
+        #Straightline Overview ####################
+
+        # Create a folium map
+        map = folium.Map()
+
+        # Draw a line connecting the locations and add distance and travel time information as popups
+        #line_coordinates = [(latitude, longitude) for _, _, latitude, longitude, _ in image_info_list] #funkar, men försöker smuggla med orter..
+        line_coordinates = [(latitude, longitude) for img, address, latitude, longitude, datetime_taken,nearest_town,Town in image_info_list]
+
+        #st.write("line_coordinates:",line_coordinates)
 
 
-        distance = calculate_distance(coord1, coord2)
-        total_distance += distance
+        total_distance = 0.0
+        for i in range(len(line_coordinates) - 1):
+            coord1 = line_coordinates[i]
+            coord2 = line_coordinates[i + 1]
 
 
-        #walking_time = calculate_travel_time(distance, mode="walking")
-        #biking_time = calculate_travel_time(distance, mode="biking")
-        #car_time = calculate_travel_time(distance, mode="car")
+            #st.write("coord1:",coord1)
+            #st.write("coord2:", coord2)
+            #st.write("nearest_town:",nearest_town)
 
-        #popup_text = f"Distance: {distance:.2f} km\n"
-        #popup_text += f"Estimated Walking Time: {walking_time:.1f} hours\n"
-        #popup_text += f"Estimated Biking Time: {biking_time:.1f} hours\n"
-        #popup_text += f"Estimated Car Driving Time: {car_time:.1f} hours"
+            #coord1_str = str(coord1)
+            #coord2_str = str(coord2)
+            #st.write("coord2_str:", coord2_str)
+
+            distance = calculate_distance(coord1, coord2)
+            total_distance += distance
 
 
-        folium.PolyLine(locations=[coord1, coord2], color='blue').add_to(map)
-        #folium.Marker(coord1, popup=datetime_taken).add_to(map)
+            #walking_time = calculate_travel_time(distance, mode="walking")
+            #biking_time = calculate_travel_time(distance, mode="biking")
+            #car_time = calculate_travel_time(distance, mode="car")
 
-    # Add markers for each location
-    for _, _, latitude, longitude, datetime_taken, _ , Town in image_info_list:
-        folium.Marker([latitude, longitude], tooltip=datetime_taken + " in " + Town).add_to(map)
+            #popup_text = f"Distance: {distance:.2f} km\n"
+            #popup_text += f"Estimated Walking Time: {walking_time:.1f} hours\n"
+            #popup_text += f"Estimated Biking Time: {biking_time:.1f} hours\n"
+            #popup_text += f"Estimated Car Driving Time: {car_time:.1f} hours"
 
-    # Calculate the bounds of the data
-    sw = image_info_list_df[[2, 3]].min().values.tolist()
-    ne = image_info_list_df[[2, 3]].max().values.tolist()
 
-    # Fit the map to the bounds
-    map.fit_bounds([sw, ne])
+            folium.PolyLine(locations=[coord1, coord2], color='blue').add_to(map)
+            #folium.Marker(coord1, popup=datetime_taken).add_to(map)
 
-    # Display the map
-    st_data = st_folium(map, width=725)
+        # Add markers for each location
+        for _, _, latitude, longitude, datetime_taken, _ , Town in image_info_list:
+            folium.Marker([latitude, longitude], tooltip=datetime_taken + " in " + Town).add_to(map)
+
+        # Calculate the bounds of the data
+        sw = image_info_list_df[[2, 3]].min().values.tolist()
+        ne = image_info_list_df[[2, 3]].max().values.tolist()
+
+        # Fit the map to the bounds
+        map.fit_bounds([sw, ne])
+
+
+
+        # Display the map with straightline ####################
+        st.subheader("Straightline")
+        st_data = st_folium(map, width=725)
 
     if len(image_info_list_df)>1:
 
@@ -412,7 +566,7 @@ if image_info_list:
 
         #visa time estimates
 
-        zeitSchäetzungExpander = st.expander("Show distances and travel times")
+        zeitSchäetzungExpander = st.expander("Show distances and travel times of Segments")
         with zeitSchäetzungExpander:
 
             st.write("Total Straightline Distance:")
@@ -443,11 +597,21 @@ if image_info_list:
                 st.subheader("Segment " +str(Route)+": " + "From " + town1 + " to " +town2)
                 #st.write("From " + town1 + " to " +town2)
 
+                routingAuswahl = ['drive', 'truck', 'bicycle', 'walk']
+
+                routingModeSelection = st.selectbox("Choose routing", routingAuswahl, key="rapidApitransportmodecheck" + str(i))
+
+                #st.divider()
+
+
+                #Google Routing - does not work (anymore) #############
                 # Transportation mode dropdown
-                transport_mode = st.selectbox("Select Google Maps Transportation Mode:",
-                                              ["driving", "walking", "bicycling"], key="transportmodecheck" + str(i))
+                #transport_mode = st.selectbox("Select Google Maps Transportation Mode:",
+                                              #["driving", "walking", "bicycling"], key="transportmodecheck" + str(i))
                 # Define the API endpoint
-                base_url = "https://maps.googleapis.com/maps/api/directions/json?"
+                #base_url = "https://maps.googleapis.com/maps/api/directions/json?"
+
+
                 lat1, lon1 = coord1
                 lat2, lon2 = coord2
 
@@ -455,19 +619,132 @@ if image_info_list:
                 origin = f"{lat1},{lon1}"
                 destination = f"{lat2},{lon2}"
 
-                # st.write("origin: ", origin)
+                #st.write("origin: ",origin)
+                #st.write("destination: ", destination)
 
+                #wandle lat lon in str um
+                lat1 = str(lat1)
+                lon1 = str(lon1)
+                lat2 = str(lat2)
+                lon2 = str(lon2)
+
+                #st.write("lat1: ", lat1)
+                #st.write("lon1: ", lon1)
+                #st.write("lat2: ", lat2)
+                #st.write("lon2: ", lon2)
+
+                #rapidapi routing #####################################
+                url = "https://route-and-directions.p.rapidapi.com/v1/routing"
+
+                querystring = {"waypoints": f"{lat1},{lon1}|{lat2},{lon2}", "mode": routingModeSelection}
+
+                #querystring = {"waypoints": f"{str(origin)}|{str(destination)}",
+                #               "mode": routingModeSelection}
+
+                #querystring = {"waypoints": f"{str(lat1)},{str(lon1)}|{destination}",
+                 #          "mode": routingModeSelection}
+
+                headers = {
+                        "X-RapidAPI-Key": X_RapidAPI_Key,
+                        "X-RapidAPI-Host": "route-and-directions.p.rapidapi.com"
+                    }
+
+                response = requests.get(url, headers=headers, params=querystring)
+
+                #st.write("response: ",response)
+
+                mls = response.json()['features'][0]['geometry']['coordinates']
+
+                # st.write(mls)
+                points = [(i[1], i[0]) for i in mls[0]]
+
+                #st.write("points:",points)
+
+                m = folium.Map()
+                # add marker for the start and ending points
+                for point in [points[0], points[-1]]:
+                    folium.Marker(point).add_to(m)
+                # add the lines
+                folium.PolyLine(points, weight=5, opacity=1).add_to(m)
+                # create optimal zoom
+                df = pd.DataFrame(mls[0]).rename(columns={0: 'Lon', 1: 'Lat'})[['Lat', 'Lon']]
+                # st.write(df)
+                sw = df[['Lat', 'Lon']].min().values.tolist()
+                ne = df[['Lat', 'Lon']].max().values.tolist()
+                m.fit_bounds([sw, ne])
+
+                # Display the map
+                st_data = st_folium(m, width=725)
+
+                #m = create_map(response)
+
+                # st.write("origin: ", origin)
                 # st.write("destination: ", destination)
 
-                # Define the parameters for the API request, including transportation mode
+                # thomastestar
+
+                thomasLatLonTabelle = response.json()['features'][0]['geometry']['coordinates']
+                points = [(i[1], i[0]) for i in thomasLatLonTabelle[0]]
+
+                st.divider()
+
+                df_thomasLatLonTabelle = pd.DataFrame(thomasLatLonTabelle[0]).rename(columns={0: 'Lon', 1: 'Lat'})[
+                    ['Lat', 'Lon']]
+
+                last_lat = df_thomasLatLonTabelle['Lat'].iloc[-1]
+                last_lon = df_thomasLatLonTabelle['Lon'].iloc[-1]
+
+                # st.write(last_lon)
+                # st.write(last_lat)
+
+                mlsTabelle = response.json()['features'][0]['properties']['legs'][0]['steps']
+                df_mlsTabelle = pd.json_normalize(mlsTabelle)  # .rename(columns={0: 'Lon', 1: 'Lat'})[['Lat', 'Lon']]
+
+                drivingInstructionAsText = df_mlsTabelle['instruction.text'].to_string(index=False)
+
+                if st.checkbox("Show Navigation-Table", key="Navigationstabelle" + str(i)):
+                    st.write(df_mlsTabelle)
+
+                if st.checkbox("Show Routedescription", key="Routedescription" + str(i)):
+                    st.info(drivingInstructionAsText)
+
+
+
+                col1, col2 = st.columns(2)
+
+                sumDistance = df_mlsTabelle['distance'].sum() / 1000
+
+                # st.write("sumDistance (km):",sumDistance )
+
+                col1.metric(label="Distance (km)", value=sumDistance.round(0))
+
+                sumTime = df_mlsTabelle['time'].sum() / 60
+
+                if sumTime < 180:
+                    col2.metric(label="Duration (min)", value=sumTime.round(0))
+                else:
+                    sumTime = sumTime / 60
+                    col2.metric(label="Duration (hours)", value=sumTime.round(0))
+
+
+
+
+
+
+
+
+
+                # Define the parameters for the google  API request, including transportation mode
+                _="""
                 params = {
                     "origin": origin,
                     "destination": destination,
                     "mode": transport_mode,
                     "key": api_key,
                 }
+                
 
-                # Make the API request
+                # Make Google the API request
                 response = requests.get(base_url, params=params)
 
                 if response.status_code == 200:
@@ -498,5 +775,6 @@ if image_info_list:
                 st.write(f"Straightline - Estimated Car Driving Time: {car_time:.1f} hours")
                 st.write("")
 
+                """
 
                 st.divider()
