@@ -10,4 +10,4 @@ streamlit==1.22.0
 streamlit_folium==0.13.0
 pandas
 #pandas==1.4.2
-python-dotenv==1.0.1
+python-dotenv
