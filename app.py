@@ -282,47 +282,49 @@ if image_info_list:
 
         col1, col2, col3 = st.columns([1, 1,2])
 
-        visaWiki = col1.button("Wikipedia Info", key=imageKey*1000)
+        visaWiki = col1.checkbox("Wikipedia Info", key=imageKey*1000)
         if visaWiki:
 
             wiki_info1 = scrape_wikipedia(Town)
+            if wiki_info1 == None:
+                st.info("Found no Info an Wikipedia")
             if wiki_info1 != None:
-                st.sidebar.subheader(f"{Town}")
-      
+                st.subheader("")
+                st.info("Info from Wikipedia:")
+                with st.container(height=300):
+                    st.subheader(f"{Town}")
+                    st.markdown(wiki_info1)
 
-                
-            
-            #st.sidebar.write("address: ",locationInfoList)
-                st.sidebar.write(wiki_info1)
-            #st.sidebar.write(len(wiki_info))
-
-
-            #Här zusätzlich nearest town som möjlighet
-
-            time.sleep(1)
-            st.sidebar.divider()
-
-            locationInfoList = address.split(",")
-            locationInfoList.insert(0, str(nearest_town))
-            #locationInfoListAuswahl = str(nearest_town) +","+locationInfoList
-            
-            #Annan approach för att hitta orstnamn
-            adressEintragAuswahl = len(locationInfoList) - 5
-            
-            st.sidebar.write("Location:" , locationInfoList[adressEintragAuswahl])
-                    
-            wiki_info2 = scrape_wikipedia(locationInfoList[adressEintragAuswahl])
-            st.sidebar.subheader(locationInfoList[adressEintragAuswahl])        
-            st.sidebar.write(wiki_info2)
-
-            #st.sidebar.write("searchLokalInfo", searchLokalInfo)
+                    #st.sidebar.write(wiki_info1)
 
 
-        st.sidebar.divider()
+
+                    #Här zusätzlich nearest town som möjlighet
+
+                    time.sleep(1)
+                    st.divider()
+
+                    locationInfoList = address.split(",")
+                    locationInfoList.insert(0, str(nearest_town))
+                    #locationInfoListAuswahl = str(nearest_town) +","+locationInfoList
+
+                    #Annan approach för att hitta orstnamn
+                    adressEintragAuswahl = len(locationInfoList) - 5
+
+                    st.write("Location:" , locationInfoList[adressEintragAuswahl])
+
+                    wiki_info2 = scrape_wikipedia(locationInfoList[adressEintragAuswahl])
+                    st.subheader(locationInfoList[adressEintragAuswahl])
+                    st.write(wiki_info2)
+
+
+
+
+        #st.sidebar.divider()
 
 
         #CHAT OPEN AI ###################################################
-        visaOpenAI = col3.button("Chat OpenAI Info", key=imageKey * 2222)
+        visaOpenAI = col3.toggle("Chat OpenAI Info", key=imageKey * 2222)
         if visaOpenAI:
             client = OpenAI(
                 # This is the default and can be omitted
@@ -348,19 +350,22 @@ if image_info_list:
                     )
                     if response and response.choices:
                         bot_response = response.choices[0].message.content
-                        st.sidebar.write(bot_response)
+                        st.subheader("")
+                        st.info("Info by ChatOpenAI:")
+                        with st.container(height=300):
+                            st.write(bot_response)
                     else:
-                        st.sidebar.write("Bot: I'm sorry, I couldn't generate a response at the moment.")
+                        st.write("OpenAI: I'm sorry, I couldn't generate a response at the moment.")
                 except Exception as e:
-                    st.sidebar.write("Bot: An error occurred while processing your request.")
-                    st.sidebar.write("Error Message:", str(e))
+                    st.write("OpenAI: An error occurred while processing your request.")
+                    st.write("Error Message:", str(e))
 
             # END CHAT OPEN AI ###################################################
 
 
 
 
-            st.sidebar.divider()
+            st.divider()
 
 
             _="""
@@ -385,9 +390,12 @@ if image_info_list:
             #st.sidebar.write("location.raw address:",nearest_town)
             
 
-        visaExif = col2.button("exif", key=imageKey)
+        visaExif = col2.toggle("Show exif data", key=imageKey)
         if visaExif:
-            st.sidebar.write(exif_data)
+            st.subheader("")
+            st.info("Raw Exif Data:")
+            with st.container(height=300):
+                st.write(exif_data)
 
         st.subheader("")
         st.divider()
