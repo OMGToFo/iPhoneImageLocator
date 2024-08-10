@@ -282,7 +282,7 @@ if image_info_list:
 
         col1, col2, col3 = st.columns([1, 1,2])
 
-        visaWiki = col1.checkbox("Wikipedia Info", key=imageKey*1000)
+        visaWiki = col1.toggle("Show Wikipedia Info", key=imageKey*1000)
         if visaWiki:
 
             wiki_info1 = scrape_wikipedia(Town)
@@ -324,7 +324,7 @@ if image_info_list:
 
 
         #CHAT OPEN AI ###################################################
-        visaOpenAI = col3.toggle("Chat OpenAI Info", key=imageKey * 2222)
+        visaOpenAI = col3.toggle("Show Chat OpenAI Info", key=imageKey * 2222)
         if visaOpenAI:
             client = OpenAI(
                 # This is the default and can be omitted
