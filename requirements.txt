@@ -6,7 +6,7 @@ opencv_python_headless==4.6.0.66
 Pillow==10.0.0
 requests==2.31.0
 reverse_geocoder==1.5.1
-streamlit==1.28.1
+streamlit
 streamlit_folium==0.13.0
 pandas
 #pandas==1.4.2
