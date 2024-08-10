@@ -355,9 +355,9 @@ if image_info_list:
                         with st.container(height=300):
                             st.write(bot_response)
                     else:
-                        st.write("OpenAI: I'm sorry, I couldn't generate a response at the moment.")
+                        st.warning("OpenAI: I'm sorry, I couldn't generate a response at the moment.")
                 except Exception as e:
-                    st.write("OpenAI: An error occurred while processing your request.")
+                    st.warning("OpenAI: An error occurred while processing your request.")
                     st.write("Error Message:", str(e))
 
             # END CHAT OPEN AI ###################################################
@@ -508,63 +508,66 @@ if image_info_list:
 
         #Straightline Overview ####################
 
-        # Create a folium map
-        map = folium.Map()
+        with st.expander("Show Straighline Distance"):
+            # Create a folium map
+            map = folium.Map()
 
-        # Draw a line connecting the locations and add distance and travel time information as popups
-        #line_coordinates = [(latitude, longitude) for _, _, latitude, longitude, _ in image_info_list] #funkar, men försöker smuggla med orter..
-        line_coordinates = [(latitude, longitude) for img, address, latitude, longitude, datetime_taken,nearest_town,Town in image_info_list]
+            # Draw a line connecting the locations and add distance and travel time information as popups
+            #line_coordinates = [(latitude, longitude) for _, _, latitude, longitude, _ in image_info_list] #funkar, men försöker smuggla med orter..
+            line_coordinates = [(latitude, longitude) for img, address, latitude, longitude, datetime_taken,nearest_town,Town in image_info_list]
 
-        #st.write("line_coordinates:",line_coordinates)
-
-
-        total_distance = 0.0
-        for i in range(len(line_coordinates) - 1):
-            coord1 = line_coordinates[i]
-            coord2 = line_coordinates[i + 1]
+            #st.write("line_coordinates:",line_coordinates)
 
 
-            #st.write("coord1:",coord1)
-            #st.write("coord2:", coord2)
-            #st.write("nearest_town:",nearest_town)
-
-            #coord1_str = str(coord1)
-            #coord2_str = str(coord2)
-            #st.write("coord2_str:", coord2_str)
-
-            distance = calculate_distance(coord1, coord2)
-            total_distance += distance
+            total_distance = 0.0
+            for i in range(len(line_coordinates) - 1):
+                coord1 = line_coordinates[i]
+                coord2 = line_coordinates[i + 1]
 
 
-            #walking_time = calculate_travel_time(distance, mode="walking")
-            #biking_time = calculate_travel_time(distance, mode="biking")
-            #car_time = calculate_travel_time(distance, mode="car")
+                #st.write("coord1:",coord1)
+                #st.write("coord2:", coord2)
+                #st.write("nearest_town:",nearest_town)
 
-            #popup_text = f"Distance: {distance:.2f} km\n"
-            #popup_text += f"Estimated Walking Time: {walking_time:.1f} hours\n"
-            #popup_text += f"Estimated Biking Time: {biking_time:.1f} hours\n"
-            #popup_text += f"Estimated Car Driving Time: {car_time:.1f} hours"
+                #coord1_str = str(coord1)
+                #coord2_str = str(coord2)
+                #st.write("coord2_str:", coord2_str)
 
-
-            folium.PolyLine(locations=[coord1, coord2], color='blue').add_to(map)
-            #folium.Marker(coord1, popup=datetime_taken).add_to(map)
-
-        # Add markers for each location
-        for _, _, latitude, longitude, datetime_taken, _ , Town in image_info_list:
-            folium.Marker([latitude, longitude], tooltip=datetime_taken + " in " + Town).add_to(map)
-
-        # Calculate the bounds of the data
-        sw = image_info_list_df[[2, 3]].min().values.tolist()
-        ne = image_info_list_df[[2, 3]].max().values.tolist()
-
-        # Fit the map to the bounds
-        map.fit_bounds([sw, ne])
+                distance = calculate_distance(coord1, coord2)
+                total_distance += distance
 
 
+                #walking_time = calculate_travel_time(distance, mode="walking")
+                #biking_time = calculate_travel_time(distance, mode="biking")
+                #car_time = calculate_travel_time(distance, mode="car")
 
-        # Display the map with straightline ####################
-        st.subheader("Straightline")
-        st_data = st_folium(map, width=725)
+                #popup_text = f"Distance: {distance:.2f} km\n"
+                #popup_text += f"Estimated Walking Time: {walking_time:.1f} hours\n"
+                #popup_text += f"Estimated Biking Time: {biking_time:.1f} hours\n"
+                #popup_text += f"Estimated Car Driving Time: {car_time:.1f} hours"
+
+
+                folium.PolyLine(locations=[coord1, coord2], color='blue').add_to(map)
+                #folium.Marker(coord1, popup=datetime_taken).add_to(map)
+
+            # Add markers for each location
+            for _, _, latitude, longitude, datetime_taken, _ , Town in image_info_list:
+                folium.Marker([latitude, longitude], tooltip=datetime_taken + " in " + Town).add_to(map)
+
+            # Calculate the bounds of the data
+            sw = image_info_list_df[[2, 3]].min().values.tolist()
+            ne = image_info_list_df[[2, 3]].max().values.tolist()
+
+            # Fit the map to the bounds
+            map.fit_bounds([sw, ne])
+
+
+
+            # Display the map with straightline ####################
+            st.subheader("Straightline")
+            st_data = st_folium(map, width=725)
+            st.write("Total Straightline Distance:")
+            st.write(f"{total_distance:.2f} km")
 
     if len(image_info_list_df)>1:
 
@@ -576,10 +579,6 @@ if image_info_list:
 
         zeitSchäetzungExpander = st.expander("Show distances and travel times of Segments")
         with zeitSchäetzungExpander:
-
-            st.write("Total Straightline Distance:")
-            st.write(f"{total_distance:.2f} km")
-
 
             total_distance = 0.0
             Route = 0
