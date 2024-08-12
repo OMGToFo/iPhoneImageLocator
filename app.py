@@ -172,11 +172,13 @@ if uploaded_files:
                     # Reverse geocoding to get the location
                     location = geolocator.reverse((latitude, longitude))
                     address = location.address
+                    time.sleep(1)
 
                     df_searchLokalInfo_Zwischen = pd.DataFrame()
 
                     geolocator = Nominatim(user_agent="nearest-town-finder")
                     location = geolocator.reverse((latitude, longitude), exactly_one=True)
+                    time.sleep(1)
                     if location:
                         nearest_town = location.address.split(",")[2].strip()
 
