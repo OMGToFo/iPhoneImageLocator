@@ -116,6 +116,7 @@ def get_address_by_location(latitude, longitude, language="en"):
     time.sleep(1)
     try:
         return app.reverse(coordinates, language=language).raw
+        time.sleep(1)
     except:
         return get_address_by_location(latitude, longitude)
 
