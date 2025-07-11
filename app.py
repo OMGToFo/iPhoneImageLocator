@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image, ExifTags
 from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderUnavailable #nytt 2025.07.11
 import folium
 import tempfile
 import os
@@ -177,8 +178,20 @@ if uploaded_files:
                     df_searchLokalInfo_Zwischen = pd.DataFrame()
 
                     geolocator = Nominatim(user_agent="thomastestar-nearest-town-finder")
-                    location = geolocator.reverse((latitude, longitude), exactly_one=True)
-                    time.sleep(1)
+
+                    #ny kod 2025.07.11
+                    location = None
+
+                    for _ in range(3):
+                        try:
+                            location = geolocator.reverse((latitude, longitude), exactly_one=True, timeout=10)
+                            break  # success, exit loop
+                        except (GeocoderTimedOut, GeocoderUnavailable):
+                            time.sleep(1)
+                    
+                    #location = geolocator.reverse((latitude, longitude), exactly_one=True)
+                    #time.sleep(1)
+                    
                     if location:
                         nearest_town = location.address.split(",")[2].strip()
 
