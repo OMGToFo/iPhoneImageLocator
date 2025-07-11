@@ -524,11 +524,12 @@ if image_info_list:
 
         Overviewcol1.metric(label="Distance (km)", value=OverviewSumDistance)
 
-        if sumTime < 180:
-            Overviewcol2.metric(label="Duration (min)", value=OverviewSumTime)
-        else:
-            OverviewSumTime = OverviewSumTime / 60
-            Overviewcol2.metric(label="Duration (hours)", value=OverviewSumTime)
+        #codestrul plötsligt
+        #if sumTime < 180:
+        #    Overviewcol2.metric(label="Duration (min)", value=OverviewSumTime)
+        #else:
+        #    OverviewSumTime = OverviewSumTime / 60
+        #    Overviewcol2.metric(label="Duration (hours)", value=OverviewSumTime)
 
 
 
