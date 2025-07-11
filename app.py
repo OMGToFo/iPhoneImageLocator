@@ -125,7 +125,7 @@ def get_address_by_location(latitude, longitude, language="en"):
 
 
 # Set up the geolocator
-geolocator = Nominatim(user_agent="image-locator")
+geolocator = Nominatim(user_agent="thomastestar-image-locator")
 
 
 
@@ -176,7 +176,7 @@ if uploaded_files:
 
                     df_searchLokalInfo_Zwischen = pd.DataFrame()
 
-                    geolocator = Nominatim(user_agent="nearest-town-finder")
+                    geolocator = Nominatim(user_agent="thomastestar-nearest-town-finder")
                     location = geolocator.reverse((latitude, longitude), exactly_one=True)
                     time.sleep(1)
                     if location:
