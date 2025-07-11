@@ -1,3 +1,5 @@
+#2025.07.11 updates agent names o lite detaljer
+
 import streamlit as st
 from PIL import Image, ExifTags
 from geopy.geocoders import Nominatim
@@ -223,7 +225,7 @@ if uploaded_files:
         # Clean up the temporary file
         os.remove(tmp_filename)
 
-with st.expander("Enter OpenAI key to get AI infos about the locations, expanded=False):
+with st.expander("Enter OpenAI key to get AI infos about the locations", expanded=False):
     openai_api_key = st.text_input("Enter your OpenAI Key to fetch location info from OpenAI", value="")
     
     # Google Maps API key
