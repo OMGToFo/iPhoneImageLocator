@@ -502,7 +502,7 @@ if image_info_list:
                         df_mlsTabelle = pd.json_normalize(
                             mlsTabelle)  # .rename(columns={0: 'Lon', 1: 'Lat'})[['Lat', 'Lon']]
 
-                        #st.write(df_mlsTabelle)
+                        st.write(df_mlsTabelle)
 
                         sumDistance = df_mlsTabelle['distance'].sum() / 1000
                         sumTime = df_mlsTabelle['time'].sum() / 60
