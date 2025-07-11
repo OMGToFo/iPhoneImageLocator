@@ -522,13 +522,13 @@ if image_info_list:
 
         Overviewcol1, Overviewcol2 = st.columns(2)
 
-        Overviewcol1.metric(label="Distance (km)", value=int(OverviewSumDistance.round(0)))
+        Overviewcol1.metric(label="Distance (km)", value=OverviewSumDistance)
 
         if sumTime < 180:
-            Overviewcol2.metric(label="Duration (min)", value=int(OverviewSumTime.round(0)))
+            Overviewcol2.metric(label="Duration (min)", value=OverviewSumTime)
         else:
             OverviewSumTime = OverviewSumTime / 60
-            Overviewcol2.metric(label="Duration (hours)", value=int(OverviewSumTime.round(0)))
+            Overviewcol2.metric(label="Duration (hours)", value=OverviewSumTime)
 
 
 
