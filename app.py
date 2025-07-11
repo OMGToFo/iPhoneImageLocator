@@ -228,7 +228,15 @@ if anzeigenSortierung == True:
 
 
 
-image_info_list = sorted(image_info_list, key=lambda x: x[4],reverse=Sortierung)
+#image_info_list = sorted(image_info_list, key=lambda x: x[4],reverse=Sortierung)
+
+#ny sorteringsfunktion 2025.07.11
+image_info_list = sorted(
+    image_info_list,
+    key=lambda x: x[4] if len(x) > 4 and x[4] is not None else '',
+    reverse=Sortierung
+)
+
 image_info_list_df = pd.DataFrame(image_info_list)
 
 if len(image_info_list) >0:
