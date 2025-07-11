@@ -223,13 +223,13 @@ if uploaded_files:
         # Clean up the temporary file
         os.remove(tmp_filename)
 
-
-openai_api_key = st.text_input("Enter your OpenAI Key to fetch location info from OpenAI", value="")
-
-# Google Maps API key
-#api_key = ""
-import os
-api_key = os.getenv('api_key')
+with st.expander("Enter OpenAI key to get AI infos about the locations, expanded=False):
+    openai_api_key = st.text_input("Enter your OpenAI Key to fetch location info from OpenAI", value="")
+    
+    # Google Maps API key
+    #api_key = ""
+    #import os
+    #api_key = os.getenv('api_key')
 
 Sortierung = False
 
