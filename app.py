@@ -304,7 +304,7 @@ if image_info_list:
         imageKey = imageKey+1
         st.write("")
         st.caption(datetime_taken)
-        st.image(img, caption=f" {nearest_town}, {address}", use_column_width='always')
+        st.image(img, caption=f" {nearest_town}, {address}")
 
         col1, col2, col3 = st.columns([1, 1,2])
 
